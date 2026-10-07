@@ -26,9 +26,14 @@
 
 ## Install
 
-1. Download the latest **`SWTOR Security Key-Setup-x.y.z.exe`** (installer) or **`…-Portable.exe`** from [Releases](https://github.com/DDZ76-Dev/SWTOR-Fob-App/releases).
+1. Download the latest **`SWTOR Security Key-Setup-x.y.z.exe`** from [Releases](https://github.com/DDZ76-Dev/SWTOR-Fob-App/releases).
 2. Optional: check the download is genuine (see [Verifying a download](SECURITY.md#verifying-a-download)).
-3. Run it. Until the app is code-signed, Windows SmartScreen may warn about an unrecognised app. Choose **More info → Run anyway**.
+3. Run the installer. Until the app is code-signed, Windows SmartScreen may warn about an unrecognised app. Choose **More info → Run anyway**.
+4. Follow the setup wizard. It installs for your Windows account only (no administrator rights needed), lets you choose the folder, and adds Start Menu and Desktop shortcuts.
+
+The app then starts hidden in the system tray each time you sign in to Windows, ready for the SWTOR launcher. To stop that, untick **Open with SWTOR launcher** in the tray icon menu.
+
+To uninstall, use Windows **Settings → Apps → Installed apps → SWTOR Security Key**. This removes the app, its shortcuts and its startup entry. Your attached key stays in `%APPDATA%\swtor-security-key` in case you reinstall. Delete that folder to remove the key too.
 
 ## Attach your security key
 
@@ -65,7 +70,7 @@ Requires Node.js 22 or later on Windows.
 npm ci
 npm start        # run the app
 npm test         # code, launcher-detection and desktop app tests
-npm run dist     # build the installer and portable .exe into dist/
+npm run dist     # build the installer .exe into dist/
 ```
 
 Releases are built by GitHub Actions when a `v*` tag is pushed. Each release gets build provenance attestations and SHA-256 checksums, and is code-signed when signing secrets are configured (see [`.github/workflows/release.yml`](.github/workflows/release.yml)).

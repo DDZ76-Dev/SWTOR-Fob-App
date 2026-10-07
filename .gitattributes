@@ -3,3 +3,4 @@
 *.webp binary
 *.ico binary
 *.nsh text eol=crlf
+installer/license.txt text eol=crlf

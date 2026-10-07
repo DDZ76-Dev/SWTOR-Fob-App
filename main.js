@@ -288,6 +288,12 @@ if (!IS_TEST && !app.requestSingleInstanceLock()) {
     fs.rmSync(path.join(app.getPath('userData'), 'key-config.json'), { force: true });
     prefs = loadPrefs();
     applyLoginItem(prefs.openWithLauncher);
+    // Started at sign-in but the user turned that off (an install/upgrade re-adds the entry):
+    // the line above removed it again, so just exit.
+    if (STARTED_IN_BACKGROUND && !prefs.openWithLauncher && !IS_TEST) {
+      app.quit();
+      return;
+    }
     createWindow();
     syncTime().catch(() => {});
     setInterval(() => syncTime({ maxAgeMs: 0 }).catch(() => {}), 30 * 60_000);

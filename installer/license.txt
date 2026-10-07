@@ -1,0 +1,46 @@
+SWTOR Security Key - unofficial fan-made tool
+
+This app is NOT affiliated with, endorsed by or sponsored by Electronic Arts,
+Broadsword Online Games or Lucasfilm. It is free, it never asks for your
+SWTOR or EA password, and it never connects to the game or EA's servers.
+
+Your security key is stored only on this PC, encrypted for your Windows
+account. The only network traffic is time checks against public time servers.
+
+The app starts hidden in the system tray when you sign in to Windows, so it
+can appear next to the SWTOR launcher. You can turn this off from the tray
+icon menu (Open with SWTOR launcher).
+
+========================================================================
+
+MIT License
+
+Copyright (c) 2026 DDZ76-Dev
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+Trademark and artwork notice: this license covers the source code only.
+Star Wars, Star Wars: The Old Republic, SWTOR, and their logos and artwork
+are trademarks or copyrighted works of their respective owners (including
+Lucasfilm Ltd. and Electronic Arts Inc.). They are not licensed under the
+terms above. This is an unofficial fan-made project and is not affiliated
+with, endorsed by, or sponsored by Electronic Arts, Broadsword Online Games,
+or Lucasfilm.
