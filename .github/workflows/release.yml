@@ -1,0 +1,75 @@
+name: Release
+
+# Push a version tag (e.g. v1.0.0) to build, attest and publish the Windows .exe files.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write       # create the GitHub Release
+  id-token: write       # sign the build provenance attestation
+  attestations: write   # store the attestation
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      # Optional code signing with Microsoft Trusted Signing. Add these repository secrets to turn it on.
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      SIGN_ENDPOINT: ${{ secrets.TRUSTED_SIGNING_ENDPOINT }}
+      SIGN_ACCOUNT: ${{ secrets.TRUSTED_SIGNING_ACCOUNT }}
+      SIGN_PROFILE: ${{ secrets.TRUSTED_SIGNING_PROFILE }}
+      SIGN_PUBLISHER: ${{ secrets.TRUSTED_SIGNING_PUBLISHER }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Check tag matches package.json version
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          if ("v$version" -ne "${{ github.ref_name }}") { throw "Tag ${{ github.ref_name }} does not match package.json version $version" }
+
+      - run: npm ci
+      - run: npm test
+
+      - name: Build (unsigned)
+        if: env.AZURE_CLIENT_ID == ''
+        run: npm run dist
+
+      - name: Build (signed with Trusted Signing)
+        if: env.AZURE_CLIENT_ID != ''
+        shell: pwsh
+        run: >
+          npx electron-builder --win --publish never
+          "-c.win.azureSignOptions.endpoint=$env:SIGN_ENDPOINT"
+          "-c.win.azureSignOptions.codeSigningAccountName=$env:SIGN_ACCOUNT"
+          "-c.win.azureSignOptions.certificateProfileName=$env:SIGN_PROFILE"
+          "-c.win.azureSignOptions.publisherName=$env:SIGN_PUBLISHER"
+
+      - name: Checksums
+        shell: pwsh
+        run: |
+          Get-ChildItem dist -Filter *.exe | ForEach-Object {
+            "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)"
+          } | Set-Content dist/SHA256SUMS.txt
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/*.exe
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          files: |
+            dist/*.exe
+            dist/SHA256SUMS.txt

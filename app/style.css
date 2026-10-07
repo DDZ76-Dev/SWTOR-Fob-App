@@ -1,0 +1,279 @@
+:root {
+  --seg-on: #141c18;
+  --gold: #e9b824;
+  --panel: rgba(14, 14, 16, 0.96);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  user-select: none;
+}
+
+/* When opened in a plain browser instead of Electron. */
+body.in-browser {
+  background: radial-gradient(ellipse at 50% 40%, #e9e7e2 0%, #c9c6bf 80%);
+  display: grid;
+  place-items: center;
+  overflow: auto;
+}
+body.in-browser .fob { width: min(900px, 94vw); }
+body.in-browser .window-controls #btnMin,
+body.in-browser .window-controls #btnClose { display: none; }
+
+/* Transparent margin for the drop shadow (keep in sync with PAD in main.js). */
+body:not(.in-browser) { padding: 22px 32px 58px; }
+
+/* ---------- Fob body (the photo, 1945 x 808) ---------- */
+.fob {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1945 / 808;
+  -webkit-app-region: drag;
+}
+.fob-photo,
+.fob-shadow {
+  position: absolute;
+  inset: 0;
+  background: url("key.webp") center / 100% 100% no-repeat;
+  pointer-events: none;
+}
+/* Tight contact shadow where the rubber edge meets the surface. */
+.fob-photo {
+  filter:
+    drop-shadow(0 2px 1.5px rgba(0, 0, 0, 0.65))
+    drop-shadow(0 7px 7px rgba(0, 0, 0, 0.32));
+}
+/* Soft ambient shadow: the fob's silhouette, blurred, pushed down and slightly narrower. */
+.fob-shadow {
+  filter: brightness(0) blur(14px);
+  opacity: 0.7;
+  transform: translateY(20px) scale(0.97, 0.99);
+}
+
+/* ---------- Push button: a cropped copy of the photo that sinks on press ---------- */
+.key-button {
+  position: absolute;
+  left: 17.069%;
+  top: 32.178%;
+  width: 13.882%;
+  height: 33.416%;
+  border-radius: 50%;
+  border: 0;
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  transition: transform 70ms ease-out, box-shadow 70ms ease-out, filter 70ms ease-out;
+}
+.key-button-face {
+  position: absolute;
+  /* button box is 270px of the 1945 x 808 photo, origin at (332, 260) */
+  left: -122.963%;
+  top: -96.296%;
+  width: 720.370%;
+  height: 299.259%;
+  background: url("key.webp") center / 100% 100% no-repeat;
+  pointer-events: none;
+}
+.key-button:focus-visible { outline: 2px solid rgba(233, 184, 36, 0.7); outline-offset: 3px; }
+.key-button.pressed {
+  transform: scale(0.965);
+  filter: brightness(0.82);
+  box-shadow: inset 0 6px 14px rgba(0, 0, 0, 0.75), 0 0 0 2px rgba(0, 0, 0, 0.55);
+}
+
+/* ---------- LCD (photo pixels 749,328 → 1448,489) ---------- */
+.lcd {
+  position: absolute;
+  left: 38.509%;
+  top: 40.594%;
+  width: 35.990%;
+  height: 20.050%;
+  border-radius: 3px;
+  overflow: hidden;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  /* recessed glass: the bezel casts a soft shadow onto the panel */
+  box-shadow:
+    inset 0 5px 9px rgba(0, 0, 0, 0.38),
+    inset 4px 0 7px rgba(0, 0, 0, 0.18),
+    inset -2px -2px 5px rgba(255, 255, 255, 0.05);
+}
+/* Click the digits to copy: a faint highlight shows it's clickable. */
+.lcd::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0);
+  transition: background 120ms;
+  pointer-events: none;
+}
+.lcd:hover::after { background: rgba(255, 255, 255, 0.05); }
+.lcd:active::after { background: rgba(0, 0, 0, 0.05); }
+.lcd:focus-visible { outline: 2px solid rgba(233, 184, 36, 0.7); outline-offset: 2px; }
+.lcd-svg,
+.lcd-glare { pointer-events: none; }
+.lcd-svg {
+  position: absolute;
+  inset: 4% 3% 2% 3%;
+  width: 94%;
+  height: 94%;
+}
+/* faint specular reflection across the glass */
+.lcd-glare {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(172deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.03) 38%, rgba(255, 255, 255, 0) 39%),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.03) 50%, rgba(0, 0, 0, 0.06));
+}
+
+.seg { transition: opacity 110ms linear; }
+.seg-ghost { fill: var(--seg-on); opacity: 0.055; }
+.seg-on { fill: var(--seg-on); opacity: 0; }
+.seg-on.lit { opacity: 0.9; }
+.seg-shadow { fill: #000; opacity: 0; filter: url(#segBlur); }
+.seg-shadow.lit { opacity: 0.2; }
+.lcd-svg.blink .seg.lit { opacity: 0; transition: none; }
+
+/* ---------- Window controls (appear on hover) ---------- */
+.window-controls {
+  position: absolute;
+  top: 5.2%;
+  right: 13%;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 150ms;
+  -webkit-app-region: no-drag;
+}
+.fob:hover .window-controls,
+.window-controls:focus-within { opacity: 1; }
+.window-controls button {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid rgba(233, 184, 36, 0.5);
+  background: rgba(10, 10, 12, 0.85);
+  color: var(--gold);
+  font-size: 11px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+}
+.window-controls button:hover { background: #2a2210; }
+#btnClose:hover { background: #7a1712; color: #fff; }
+
+/* ---------- Attach / info panels ---------- */
+.panel {
+  position: absolute;
+  inset: 9% 10% 9% 10%;
+  padding: 9px 16px;
+  border-radius: 14px;
+  background: var(--panel);
+  border: 1px solid rgba(233, 184, 36, 0.55);
+  color: #e8e2cf;
+  font-size: 11.5px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  -webkit-app-region: no-drag;
+  z-index: 5;
+}
+.panel[hidden] { display: none; }
+.panel.dragover { border-color: #fff3c4; box-shadow: 0 0 0 2px rgba(233, 184, 36, 0.5); }
+.panel h2 {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.panel p { margin: 0; }
+.panel .hint { color: #a9a393; }
+.panel .fixed { color: #cfc6a8; font-size: 10.5px; }
+.panel label { display: flex; flex-direction: column; gap: 2px; }
+.panel .row { display: flex; align-items: center; gap: 10px; }
+.panel input {
+  font: inherit;
+  color: #f4efe0;
+  background: #1c1c20;
+  border: 1px solid #3a3a40;
+  border-radius: 5px;
+  padding: 4px 6px;
+  min-width: 0;
+  user-select: text;
+}
+.panel input:focus { outline: none; border-color: var(--gold); }
+.panel .error { color: #ff8a73; min-height: 1em; }
+.panel .error[hidden] { display: none; }
+.panel .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: auto; }
+.panel button,
+.panel .file-btn {
+  font: inherit;
+  padding: 4px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  border: 1px solid #4a4a50;
+  background: #26262b;
+  color: #e8e2cf;
+}
+.panel .file-btn { display: inline-block; border-color: var(--gold); color: var(--gold); white-space: nowrap; }
+.panel .file-btn:hover { background: #2a2210; }
+.panel .primary { background: var(--gold); border-color: var(--gold); color: #1a1408; font-weight: 600; }
+.panel .danger { margin-right: auto; border-color: #7a1712; color: #ff8a73; }
+.panel .danger.confirm { background: #7a1712; color: #fff; }
+
+.info { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 2px 0; }
+.info dt { color: #a9a393; }
+.info dd { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- Copy notification (sits on the black stripe under the LCD) ---------- */
+.toast {
+  position: absolute;
+  left: 56.5%;
+  top: 66%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px 4px 7px;
+  border-radius: 999px;
+  background: rgba(12, 12, 14, 0.92);
+  border: 1px solid rgba(233, 184, 36, 0.7);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
+  color: #f3e7bf;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 6px);
+  transition: opacity 160ms ease-out, transform 160ms ease-out;
+  z-index: 4;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast-icon {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: #1a1408;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+}
+.toast-icon::before { content: "\2713"; }
+.toast.error { border-color: #c2362b; color: #ffd2c9; }
+.toast.error .toast-icon { background: #c2362b; color: #fff; }
+.toast.error .toast-icon::before { content: "!"; }
+.panel .disclaimer { color: #77725f; font-size: 9.5px; }
+
