@@ -1,6 +1,6 @@
 {
   "name": "swtor-security-key",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Unofficial desktop security key for Star Wars: The Old Republic. Generates your SWTOR authenticator codes locally.",
   "author": "DDZ76-Dev",
   "license": "MIT",

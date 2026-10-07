@@ -11,6 +11,10 @@ contextBridge.exposeInMainWorld('keyHost', {
   syncTime: (force) => ipcRenderer.invoke('time:sync', force),
   timeStatus: () => ipcRenderer.invoke('time:status'),
   swtorState: () => ipcRenderer.invoke('swtor:state'),
+  onVisibility: (callback) => {
+    ipcRenderer.removeAllListeners('window:visibility');
+    ipcRenderer.on('window:visibility', (_e, visible) => callback(visible));
+  },
   onSwtorState: (callback) => {
     ipcRenderer.removeAllListeners('swtor:state');
     ipcRenderer.on('swtor:state', (_e, state) => callback(state));

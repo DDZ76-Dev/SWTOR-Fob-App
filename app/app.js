@@ -44,6 +44,7 @@
     async timeStatus() { return this.syncTime(); },
     async swtorState() { return { launcherOpen: false, gameRunning: false }; },
     onSwtorState() {},
+    onVisibility() {},
   };
 
   const host = window.keyHost || null;
@@ -209,13 +210,19 @@
     }
   }
 
-  function powerOff() {
+  // keepClipboard: the window was hidden, so a just-copied code may still be on its way into
+  // the launcher. Leave it for DISPLAY_SECONDS, then clear it (only if it's still our code).
+  let clipboardTimer = null;
+  function powerOff({ keepClipboard = false } = {}) {
     clearInterval(tickTimer);
     clearTimeout(offTimer);
     tickTimer = offTimer = null;
     lastCounter = null;
     blank();
-    store.clearCopy().catch(() => {});
+    clearTimeout(clipboardTimer);
+    const clear = () => store.clearCopy().catch(() => {});
+    if (keepClipboard) clipboardTimer = setTimeout(clear, DISPLAY_SECONDS * 1000);
+    else clear();
   }
 
   // A quick off/on flicker of the segments confirms the code was copied.
@@ -467,4 +474,10 @@
   pollClock(10);
 
   store.onSwtorState(applySwtorState);
+  // Hidden to the tray or minimized: back to the off state, like putting the fob away.
+  // Shown again while the launcher is open: switch back on.
+  store.onVisibility((visible) => {
+    if (!visible) powerOff({ keepClipboard: true });
+    else if (launcherOpen && status.attached) powerOn();
+  });
 })();

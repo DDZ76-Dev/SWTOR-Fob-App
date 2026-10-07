@@ -40,7 +40,7 @@ app.whenReady().then(async () => {
   try {
     const exposed = await run(`return Object.keys(window.keyHost).sort()`);
     check('window only gets status/attach/remove/code (no secret access)',
-      JSON.stringify(exposed) === JSON.stringify(['attach', 'clearCopy', 'close', 'code', 'copy', 'minimize', 'onSwtorState', 'refreshCopy', 'remove', 'status', 'swtorState', 'syncTime', 'timeStatus']), exposed.join(','));
+      JSON.stringify(exposed) === JSON.stringify(['attach', 'clearCopy', 'close', 'code', 'copy', 'minimize', 'onSwtorState', 'onVisibility', 'refreshCopy', 'remove', 'status', 'swtorState', 'syncTime', 'timeStatus']), exposed.join(','));
     check('window has no Node.js access', await run(`return typeof require === 'undefined' && typeof process === 'undefined'`));
 
     check('starts with no key', (await run(`return keyHost.status()`)).attached === false);
@@ -134,6 +134,34 @@ app.whenReady().then(async () => {
     await run(`document.querySelector('#infoPanel [data-close]').click()`);
     await new Promise((r) => setTimeout(r, 300));
     check('opening settings keeps the display on', litWithPanel > 0 && (await litSegments()) > 0, `lit: ${litWithPanel}`);
+
+    // Hiding to the tray or minimizing puts the display back in its off state,
+    // but leaves a just-copied code on the clipboard for pasting.
+    for (const [how, hide, show] of [
+      ['hiding to the tray', () => win.hide(), () => win.show()],
+      ['minimizing', () => win.minimize(), () => win.restore()],
+    ]) {
+      await run(`document.getElementById('lcd').click()`);
+      await new Promise((r) => setTimeout(r, 500));
+      const copiedBefore = clipboard.readText();
+      hide();
+      await new Promise((r) => setTimeout(r, 500));
+      const litHidden = await litSegments();
+      show();
+      await new Promise((r) => setTimeout(r, 500));
+      check(`${how} turns the display off`, litHidden === 0 && (await litSegments()) === 0, `lit: ${litHidden}`);
+      check(`${how} keeps the copied code for pasting`, /^\d{6}$/.test(copiedBefore) && clipboard.readText() === copiedBefore);
+    }
+
+    // Brought back while the launcher is open: the display switches back on.
+    win.webContents.send('swtor:state', { launcherOpen: true, gameRunning: false });
+    await new Promise((r) => setTimeout(r, 400));
+    win.hide();
+    await new Promise((r) => setTimeout(r, 400));
+    win.show();
+    await new Promise((r) => setTimeout(r, 600));
+    check('shown again while the launcher is open turns the display on', (await litSegments()) > 0);
+    win.webContents.send('swtor:state', { launcherOpen: false, gameRunning: false });
 
     win.setPosition(137, 151);
     await new Promise((r) => setTimeout(r, 900));

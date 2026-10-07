@@ -157,6 +157,12 @@ function createWindow() {
   win.loadFile(path.join(__dirname, 'app', 'index.html'));
   win.once('ready-to-show', () => { if (!STARTED_IN_BACKGROUND || IS_TEST) win.show(); });
   win.on('move', rememberPosition); // debounced; fires for drags and programmatic moves
+  // Tell the window when it goes to the tray/taskbar or comes back, so the display can switch off/on.
+  const sendVisibility = (visible) => { if (!win.isDestroyed()) win.webContents.send('window:visibility', visible); };
+  win.on('hide', () => sendVisibility(false));
+  win.on('minimize', () => sendVisibility(false));
+  win.on('show', () => sendVisibility(true));
+  win.on('restore', () => sendVisibility(true));
   // Closing hides to the tray so the launcher watcher keeps running.
   win.on('close', (e) => {
     if (!quitting && tray) { e.preventDefault(); win.hide(); }
