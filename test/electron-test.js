@@ -123,6 +123,18 @@ app.whenReady().then(async () => {
     await new Promise((r) => setTimeout(r, 400));
     check('display turns off when the game starts', (await litSegments()) === 0);
 
+    // Opening and closing the settings panel leaves the display on.
+    win.webContents.send('swtor:state', { launcherOpen: false, gameRunning: false });
+    await new Promise((r) => setTimeout(r, 200));
+    await run(`document.getElementById('lcd').click()`);
+    await new Promise((r) => setTimeout(r, 500));
+    await run(`document.getElementById('btnInfo').click()`);
+    await new Promise((r) => setTimeout(r, 500));
+    const litWithPanel = await litSegments();
+    await run(`document.querySelector('#infoPanel [data-close]').click()`);
+    await new Promise((r) => setTimeout(r, 300));
+    check('opening settings keeps the display on', litWithPanel > 0 && (await litSegments()) > 0, `lit: ${litWithPanel}`);
+
     win.setPosition(137, 151);
     await new Promise((r) => setTimeout(r, 900));
     const savedPrefs = JSON.parse(fs.readFileSync(path.join(tmp, 'prefs.json'), 'utf8'));

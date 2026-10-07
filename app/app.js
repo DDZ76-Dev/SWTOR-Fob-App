@@ -250,7 +250,7 @@
     if (state.gameRunning) {
       powerOff();
     } else if (launcherOpen && !wasOpen) {
-      if (status.attached && !panelsOpen()) powerOn();
+      if (status.attached) powerOn();
     } else if (!launcherOpen && wasOpen && tickTimer) {
       scheduleOff();
     }
@@ -346,9 +346,9 @@
     $('inSecret').value = '';
   }
 
+  // Panels sit on top of the fob; the display keeps running underneath.
   function openPanel() {
     closePanels();
-    powerOff();
     if (status.attached) {
       const account = [status.issuer, status.label].filter(Boolean).join(' · ');
       $('infoAccount').textContent = account || 'SWTOR';
@@ -370,7 +370,9 @@
     }
   }
 
+  // The key changed (attached, removed or loaded at startup): start from a blank display.
   async function applyStatus(next) {
+    powerOff();
     status = next;
     buildLcd(status.attached ? status.digits : TOTP.SWTOR.digits);
     blank();
