@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'">
+  <title>SWTOR Security Key</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="fob" id="fob">
+    <div class="fob-shadow" aria-hidden="true"></div>
+    <div class="fob-photo" aria-hidden="true"></div>
+    <button class="key-button" id="keyButton" aria-label="Refresh code and sync time" title="Refresh &amp; sync time">
+      <span class="key-button-face"></span>
+    </button>
+
+    <div class="lcd" id="lcd" role="button" tabindex="0" aria-live="polite" aria-label="Copy security code" title="Click to copy">
+      <svg id="lcdSvg" class="lcd-svg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="lcd-glare"></div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite">
+      <span class="toast-icon" aria-hidden="true"></span><span class="toast-text"></span>
+    </div>
+
+    <div class="window-controls">
+      <button id="btnInfo" title="Security key">&#9881;</button>
+      <button id="btnMin" title="Minimize">&#8211;</button>
+      <button id="btnClose" title="Close">&#10005;</button>
+    </div>
+
+    <!-- Shown when no key is attached -->
+    <form class="panel" id="attachPanel" hidden autocomplete="off">
+      <h2>Attach SWTOR security key</h2>
+      <p class="hint">On swtor.com choose <b>Add Security Key</b>, then load a screenshot of the QR code it shows.</p>
+      <div class="row">
+        <label class="file-btn">Load QR screenshot
+          <input id="qrFile" type="file" accept="image/*" hidden>
+        </label>
+        <span class="hint">or paste it (Ctrl+V) / drop it here</span>
+      </div>
+      <label>or type the setup key
+        <input id="inSecret" type="password" spellcheck="false" placeholder="Base32 setup key">
+      </label>
+      <p class="fixed">Fixed SWTOR format: 6 digits &middot; new code every 30 s</p>
+      <p class="error" id="attachError"></p>
+      <p class="disclaimer">Unofficial fan-made tool &middot; not affiliated with EA, Broadsword or Lucasfilm</p>
+      <div class="actions">
+        <button type="button" data-close>Cancel</button>
+        <button type="submit" class="primary">Attach</button>
+      </div>
+    </form>
+
+    <!-- Shown when a key is attached: read only -->
+    <div class="panel" id="infoPanel" hidden>
+      <h2>Security key</h2>
+      <dl class="info">
+        <dt>Account</dt><dd id="infoAccount"></dd>
+        <dt>Format</dt><dd id="infoFormat"></dd>
+        <dt>Attached</dt><dd id="infoAttached"></dd>
+        <dt>Clock</dt><dd id="infoClock"></dd>
+      </dl>
+      <p class="hint">The key is locked and cannot be edited. To use a different key, remove this one and attach a new QR code from swtor.com.</p>
+      <p class="disclaimer">Unofficial fan-made tool &middot; not affiliated with EA, Broadsword or Lucasfilm</p>
+      <p class="error" id="removeWarning" hidden>Removing deletes the key from this app. Your phone keeps working only if it holds the same key.</p>
+      <div class="actions">
+        <button type="button" id="btnRemove" class="danger">Remove key</button>
+        <button type="button" data-close class="primary">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="vendor/jsQR.js"></script>
+  <script src="totp.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

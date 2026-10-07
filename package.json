@@ -1,0 +1,74 @@
+{
+  "name": "swtor-security-key",
+  "version": "1.0.0",
+  "description": "Unofficial desktop security key for Star Wars: The Old Republic. Generates your SWTOR authenticator codes locally.",
+  "author": "DDZ76-Dev",
+  "license": "MIT",
+  "homepage": "https://github.com/DDZ76-Dev/SWTOR-Fob-App",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DDZ76-Dev/SWTOR-Fob-App.git"
+  },
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "test": "node test/totp-test.js && node test/launcher-watch-test.js && electron test/electron-test.js",
+    "dist": "electron-builder --win --publish never",
+    "vendor": "node -e \"require('fs').copyFileSync('node_modules/jsqr/dist/jsQR.js','app/vendor/jsQR.js')\""
+  },
+  "devDependencies": {
+    "electron": "^38.0.0",
+    "electron-builder": "^26.15.3",
+    "jsqr": "^1.4.0"
+  },
+  "build": {
+    "appId": "io.github.ddz76dev.swtorfob",
+    "productName": "SWTOR Security Key",
+    "copyright": "Unofficial fan-made tool. Not affiliated with EA, Broadsword or Lucasfilm.",
+    "directories": {
+      "output": "dist",
+      "buildResources": "installer"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "time-sync.js",
+      "launcher-watch.js",
+      "app/**/*",
+      "assets/**/*",
+      "package.json",
+      "!app/test-*"
+    ],
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SWTOR Security Key",
+      "include": "installer/installer.nsh",
+      "artifactName": "${productName}-Setup-${version}.exe"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-Portable.exe"
+    }
+  }
+}
