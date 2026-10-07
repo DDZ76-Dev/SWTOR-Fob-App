@@ -5,9 +5,9 @@ const POLL_MS = 3000;
 const LAUNCHER_EXE = 'launcher.exe';
 const GAME_EXE = 'swtor.exe';
 
-function run(cmd, args) {
+function run(cmd, args, timeout = 5000) {
   return new Promise((resolve) => {
-    execFile(cmd, args, { windowsHide: true, timeout: 5000, maxBuffer: 4 * 1024 * 1024 }, (err, stdout) => resolve(err ? null : stdout));
+    execFile(cmd, args, { windowsHide: true, timeout, maxBuffer: 4 * 1024 * 1024 }, (err, stdout) => resolve(err ? null : stdout));
   });
 }
 
@@ -54,7 +54,9 @@ function watchLauncher({ onOpen = () => {}, onClose = () => {}, onGameStart = ()
 
       const launcherExe = images.has(LAUNCHER_EXE);
       if (launcherExe && !launcherOpen && !otherLauncher) {
-        if (await isSwtorLauncher()) { launcherOpen = true; onOpen(); } else { otherLauncher = true; }
+        const swtor = await isSwtorLauncher();
+        if (swtor === true) { launcherOpen = true; onOpen(); }
+        else if (swtor === false) { otherLauncher = true; }
       } else if (!launcherExe) {
         otherLauncher = false;
         if (launcherOpen) { launcherOpen = false; onClose(); }
