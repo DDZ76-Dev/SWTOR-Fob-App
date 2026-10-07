@@ -10,10 +10,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'fob-watch-test-'));
 const ping = path.join(process.env.SystemRoot, 'System32', 'PING.EXE');
 
-function fakeLauncher(folder, seconds) {
+function fakeLauncher(folder, seconds, name = 'launcher.exe') {
   const dir = path.join(tmp, folder);
   fs.mkdirSync(dir, { recursive: true });
-  const exe = path.join(dir, 'launcher.exe');
+  const exe = path.join(dir, name);
   fs.copyFileSync(ping, exe);
   return spawn(exe, ['-n', String(seconds), '127.0.0.1'], { windowsHide: true, stdio: 'ignore' });
 }
@@ -26,7 +26,12 @@ const check = (name, ok) => {
 
 (async () => {
   const events = [];
-  const stop = watchLauncher({ onOpen: () => events.push('open'), onClose: () => events.push('close') });
+  const stop = watchLauncher({
+    onOpen: () => events.push('open'),
+    onClose: () => events.push('close'),
+    onGameStart: () => events.push('game'),
+    onGameExit: () => events.push('game-exit'),
+  });
 
   await sleep(4000);
   check('nothing happens with no launcher running', events.length === 0);
@@ -43,6 +48,13 @@ const check = (name, ok) => {
   swtor.kill();
   await sleep(7000);
   check('detects the SWTOR launcher closing', events.join() === 'open,close');
+
+  const game = fakeLauncher('Star Wars - The Old Republic/swtor/retailclient', 60, 'swtor.exe');
+  await sleep(7000);
+  check('detects the game starting', events.join() === 'open,close,game');
+  game.kill();
+  await sleep(7000);
+  check('detects the game exiting', events.join() === 'open,close,game,game-exit');
 
   stop();
   try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* still locked, left in %TEMP% */ }

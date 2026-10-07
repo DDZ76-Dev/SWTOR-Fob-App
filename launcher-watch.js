@@ -1,19 +1,26 @@
-// Watches for the SWTOR launcher (launcher.exe) and reports when it opens and closes.
+// Watches for the SWTOR launcher (launcher.exe) and the game itself (swtor.exe).
 const { execFile } = require('child_process');
 
 const POLL_MS = 3000;
-const EXE = 'launcher.exe';
+const LAUNCHER_EXE = 'launcher.exe';
+const GAME_EXE = 'swtor.exe';
 
 function run(cmd, args) {
   return new Promise((resolve) => {
-    execFile(cmd, args, { windowsHide: true, timeout: 5000 }, (err, stdout) => resolve(err ? '' : stdout));
+    execFile(cmd, args, { windowsHide: true, timeout: 5000, maxBuffer: 4 * 1024 * 1024 }, (err, stdout) => resolve(err ? null : stdout));
   });
 }
 
-// tasklist is cheap enough to poll; it only tells us that *some* launcher.exe exists.
-async function launcherExeRunning() {
-  const out = await run('tasklist', ['/FI', `IMAGENAME eq ${EXE}`, '/FO', 'CSV', '/NH']);
-  return out.toLowerCase().includes(`"${EXE}"`);
+// One cheap tasklist call per poll gives every running image name.
+async function runningImages() {
+  const out = await run('tasklist', ['/FO', 'CSV', '/NH']);
+  if (out === null) return null;
+  const names = new Set();
+  for (const line of out.split(/\r?\n/)) {
+    const m = line.match(/^"([^"]+)"/);
+    if (m) names.add(m[1].toLowerCase());
+  }
+  return names;
 }
 
 // "launcher.exe" is a common name, so check the path once when one appears.
@@ -21,31 +28,46 @@ async function launcherExeRunning() {
 async function isSwtorLauncher() {
   const out = await run('powershell', [
     '-NoProfile', '-NonInteractive', '-Command',
-    `Get-CimInstance Win32_Process -Filter "Name='${EXE}'" | ForEach-Object { if ($_.ExecutablePath) { $_.ExecutablePath } else { '?' } }`,
+    `Get-CimInstance Win32_Process -Filter "Name='${LAUNCHER_EXE}'" | ForEach-Object { if ($_.ExecutablePath) { $_.ExecutablePath } else { '?' } }`,
   ]);
-  const paths = out.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+  const paths = (out || '').split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
   return paths.some((p) => p === '?' || /old republic|swtor/i.test(p));
 }
 
-function watchLauncher({ onOpen, onClose }) {
-  let running = false;
+/**
+ * Calls back on transitions:
+ *   onOpen / onClose            the SWTOR launcher started / exited
+ *   onGameStart / onGameExit    swtor.exe started / exited
+ */
+function watchLauncher({ onOpen = () => {}, onClose = () => {}, onGameStart = () => {}, onGameExit = () => {} }) {
+  let launcherOpen = false;
   let otherLauncher = false; // a non-SWTOR launcher.exe, checked once until it exits
+  let gameRunning = false;
   let busy = false;
+
   const tick = async () => {
     if (busy) return;
     busy = true;
     try {
-      const exeRunning = await launcherExeRunning();
-      if (exeRunning && !running && !otherLauncher) {
-        if (await isSwtorLauncher()) { running = true; onOpen(); } else { otherLauncher = true; }
-      } else if (!exeRunning) {
+      const images = await runningImages();
+      if (!images) return; // tasklist failed this time; keep the previous state
+
+      const launcherExe = images.has(LAUNCHER_EXE);
+      if (launcherExe && !launcherOpen && !otherLauncher) {
+        if (await isSwtorLauncher()) { launcherOpen = true; onOpen(); } else { otherLauncher = true; }
+      } else if (!launcherExe) {
         otherLauncher = false;
-        if (running) { running = false; onClose(); }
+        if (launcherOpen) { launcherOpen = false; onClose(); }
       }
+
+      const game = images.has(GAME_EXE);
+      if (game && !gameRunning) { gameRunning = true; onGameStart(); }
+      else if (!game && gameRunning) { gameRunning = false; onGameExit(); }
     } finally {
       busy = false;
     }
   };
+
   tick();
   const timer = setInterval(tick, POLL_MS);
   return () => clearInterval(timer);

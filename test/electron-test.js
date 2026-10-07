@@ -40,7 +40,7 @@ app.whenReady().then(async () => {
   try {
     const exposed = await run(`return Object.keys(window.keyHost).sort()`);
     check('window only gets status/attach/remove/code (no secret access)',
-      JSON.stringify(exposed) === JSON.stringify(['attach', 'clearCopy', 'close', 'code', 'copy', 'minimize', 'refreshCopy', 'remove', 'status', 'syncTime', 'timeStatus']), exposed.join(','));
+      JSON.stringify(exposed) === JSON.stringify(['attach', 'clearCopy', 'close', 'code', 'copy', 'minimize', 'onSwtorState', 'refreshCopy', 'remove', 'status', 'swtorState', 'syncTime', 'timeStatus']), exposed.join(','));
     check('window has no Node.js access', await run(`return typeof require === 'undefined' && typeof process === 'undefined'`));
 
     check('starts with no key', (await run(`return keyHost.status()`)).attached === false);
@@ -106,6 +106,22 @@ app.whenReady().then(async () => {
     await run(`document.getElementById('lcd').click()`);
     await new Promise((r) => setTimeout(r, 400));
     check('clicking the digits again copies again', clipboard.readText() === reference(netNow()));
+
+    // Launcher open: display turns on by itself and stays on. Game start: display turns off.
+    const litSegments = () => run(`return document.querySelectorAll('#lcdSvg .seg-on.lit').length`);
+    await run(`document.querySelector('[data-close]')?.click()`);
+    win.webContents.send('swtor:state', { launcherOpen: false, gameRunning: false });
+    await new Promise((r) => setTimeout(r, 300));
+    await run(`document.getElementById('lcd').click()`); // turn on, then let the test's state drive it
+    win.webContents.send('swtor:state', { launcherOpen: false, gameRunning: true });
+    await new Promise((r) => setTimeout(r, 400));
+    check('display is off while the game runs', (await litSegments()) === 0);
+    win.webContents.send('swtor:state', { launcherOpen: true, gameRunning: false });
+    await new Promise((r) => setTimeout(r, 600));
+    check('display turns on when the launcher opens', (await litSegments()) > 0);
+    win.webContents.send('swtor:state', { launcherOpen: true, gameRunning: true });
+    await new Promise((r) => setTimeout(r, 400));
+    check('display turns off when the game starts', (await litSegments()) === 0);
 
     win.setPosition(137, 151);
     await new Promise((r) => setTimeout(r, 900));

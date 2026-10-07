@@ -194,23 +194,46 @@ function createTray() {
   buildTrayMenu();
 }
 
-// When the SWTOR launcher opens, float the key next to it without stealing focus
-// from the launcher's login box. Hide it again when the launcher closes, unless
-// the user opened it themselves.
+// The window keeps its display on while the launcher is open (see app.js).
+const swtor = { launcherOpen: false, gameRunning: false };
+function sendSwtorState() {
+  if (win && !win.isDestroyed()) win.webContents.send('swtor:state', { ...swtor });
+}
+
+// Launcher opens: float the key beside it with the display on, without stealing focus
+//   from the launcher's login box.
+// Game starts: hide to the tray (still reachable from the tray icon).
+// Launcher closes without the game: hide again, unless the user opened the key themselves.
 function startLauncherWatch() {
   watchLauncher({
     onOpen: () => {
+      swtor.launcherOpen = true;
       if (!prefs.openWithLauncher || !win) return;
       syncTime().catch(() => {});
       if (!win.isVisible()) shownForLauncher = true;
       win.setAlwaysOnTop(true, 'floating');
       showWindow({ focus: false });
+      sendSwtorState();
     },
     onClose: () => {
+      swtor.launcherOpen = false;
+      sendSwtorState();
       if (!win) return;
       win.setAlwaysOnTop(false);
       if (shownForLauncher) win.hide();
       shownForLauncher = false;
+    },
+    onGameStart: () => {
+      swtor.gameRunning = true;
+      sendSwtorState();
+      if (!prefs.openWithLauncher || !win) return;
+      win.setAlwaysOnTop(false);
+      win.hide();
+      shownForLauncher = false;
+    },
+    onGameExit: () => {
+      swtor.gameRunning = false;
+      sendSwtorState();
     },
   });
 }
@@ -225,6 +248,7 @@ ipcMain.handle('key:remove', () => {
 ipcMain.handle('key:code', () => currentCode());
 ipcMain.handle('time:sync', (_e, force) => syncTime({ maxAgeMs: force ? 5_000 : 60_000 }).then((c) => ({ ...c })));
 ipcMain.handle('time:status', () => ({ ...clock }));
+ipcMain.handle('swtor:state', () => ({ ...swtor }));
 
 // Copies the current code. Only replaces/clears the clipboard while it still holds a code we put there.
 let lastCopied = null;

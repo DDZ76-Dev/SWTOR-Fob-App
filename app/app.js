@@ -42,6 +42,8 @@
     async clearCopy() { this.copied = false; },
     async syncTime() { return { offset: 0, source: 'PC clock', syncedAt: Date.now(), error: null }; },
     async timeStatus() { return this.syncTime(); },
+    async swtorState() { return { launcherOpen: false, gameRunning: false }; },
+    onSwtorState() {},
   };
 
   const host = window.keyHost || null;
@@ -191,6 +193,7 @@
     lastCounter = counter;
     try {
       const result = await store.code();
+      if (!tickTimer) return; // display was turned off while the code was being fetched
       if (!result) throw new Error('No key');
       currentCode = result.code;
       showText(currentCode);
@@ -225,13 +228,32 @@
     return !attachPanel.hidden || !infoPanel.hidden;
   }
 
+  // While the SWTOR launcher is open the display stays on; otherwise it turns off
+  // DISPLAY_SECONDS after the last press, like the real fob saving its battery.
+  let launcherOpen = false;
+  function scheduleOff() {
+    clearTimeout(offTimer);
+    offTimer = launcherOpen ? null : setTimeout(powerOff, DISPLAY_SECONDS * 1000);
+  }
+
   // Turns the display on (or keeps it on) and redraws the code.
   function powerOn() {
-    clearTimeout(offTimer);
     if (!tickTimer) tickTimer = setInterval(refresh, 250);
     lastCounter = null;
     refresh();
-    offTimer = setTimeout(powerOff, DISPLAY_SECONDS * 1000);
+    scheduleOff();
+  }
+
+  function applySwtorState(state) {
+    const wasOpen = launcherOpen;
+    launcherOpen = state.launcherOpen && !state.gameRunning;
+    if (state.gameRunning) {
+      powerOff();
+    } else if (launcherOpen && !wasOpen) {
+      if (status.attached && !panelsOpen()) powerOn();
+    } else if (!launcherOpen && wasOpen && tickTimer) {
+      scheduleOff();
+    }
   }
 
   function describeOffset(ms) {
@@ -431,11 +453,16 @@
   // ---------- Boot ----------
   store.status()
     .catch(() => ({ attached: false }))
-    .then(applyStatus);
+    .then(applyStatus)
+    .then(() => store.swtorState())
+    .then(applySwtorState)
+    .catch(() => {});
   // Pick up the network-time offset once the startup sync finishes.
   const pollClock = (tries) => store.timeStatus().then((c) => {
     if (c.syncedAt) clockOffset = c.offset;
     else if (tries > 0) setTimeout(() => pollClock(tries - 1), 1000);
   }).catch(() => {});
   pollClock(10);
+
+  store.onSwtorState(applySwtorState);
 })();

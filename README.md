@@ -20,7 +20,7 @@
 - **Standard SWTOR codes.** 6-digit time-based codes (TOTP, RFC 6238), the same codes Google Authenticator makes for SWTOR.
 - **Click the digits to copy.** A notification confirms what was copied. If the code changes while the display is on, the clipboard is updated, and it's cleared when the display turns off.
 - **Internet time sync.** Press the button to check the time with public time servers, so a wrong Windows clock can't cause rejected codes.
-- **Opens with the SWTOR launcher.** The app waits in the system tray and appears next to the launcher without taking focus from the login box.
+- **Follows the SWTOR launcher.** The app waits in the system tray. When the launcher opens, the fob appears beside it with the display on, without taking focus from the login box. When the game starts, the fob hides to the tray.
 - **Locked, encrypted key.** You set it up once from the swtor.com QR code. After that it can only be removed, never edited or read back.
 - **Remembers its position** on your screen.
 

@@ -12,7 +12,7 @@ Please report security issues privately with GitHub's **Report a vulnerability**
 - **No passwords.** The app never asks for your SWTOR or EA password.
 - **Minimal network use.** The only network traffic is time checks against public time servers (`time.windows.com`, `time.google.com`, `pool.ntp.org`, falling back to the HTTPS `Date` header from `www.cloudflare.com`). Nothing about you or your key is sent. There is no telemetry, analytics or update check.
 - **Careful clipboard use.** The code is copied only when you click the digits. It's cleared when the display turns off, but only if the clipboard still holds that code.
-- **Launcher detection only checks process names.** The app runs `tasklist` and checks for `launcher.exe`. It never reads or touches the SWTOR launcher or game.
+- **Launcher detection only checks process names.** The app runs `tasklist` and checks for `launcher.exe` and `swtor.exe`. It never reads or touches the SWTOR launcher or game.
 
 ## Verifying a download
 
