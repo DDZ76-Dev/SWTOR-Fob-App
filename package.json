@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "electron": "^38.0.0",
-    "electron-builder": "^26.15.3",
+    "electron-builder": "^26.18.0",
     "jsqr": "^1.4.0"
   },
   "build": {
